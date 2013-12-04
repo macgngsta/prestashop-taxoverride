@@ -15,6 +15,7 @@
 *  http://dor.wa.gov/AddressRates.aspx?output=xml&addr=&city=&zip=98501
 */
 require_once('TaxOverrideService.php');
+require_once('CustomTaxObject.php');
 
 //----------------------------------------
 // WashingtonTaxOverrideService Class

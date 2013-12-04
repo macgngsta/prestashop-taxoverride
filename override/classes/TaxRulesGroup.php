@@ -28,7 +28,7 @@ TaxRulesGroup::$klogger = new KLogger('logs/', KLogger::INFO);
 
 class TaxRulesGroup extends TaxRulesGroupCore
 {
- 	static $klogger;
+ 	public static $klogger;
 	/* NEW only if there is an address */
 
 	public static function getTaxes($id_tax_rules_group, $id_country, $id_state, $id_county)
