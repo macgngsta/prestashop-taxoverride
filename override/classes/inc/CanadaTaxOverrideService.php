@@ -13,6 +13,9 @@
 *  http://www.flmontreal.com/2013/events/sales-tax-rate/4852/
 */
 
+require_once('TaxOverrideService.php');
+require_once('CustomTaxObject.php');
+
 //----------------------------------------
 // CanadaTaxOverrideService Class
 //----------------------------------------
@@ -55,7 +58,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 	}
 
 	private function buildMap(){
-		$t1 = new CanadaTaxObject(self::PROVINCE_BRITISH_COLUMBIA, self::PROVINCE_BRITISH_COLUMBIA_ISO);
+		$t1 = new CustomTaxObject(self::PROVINCE_BRITISH_COLUMBIA, self::PROVINCE_BRITISH_COLUMBIA_ISO);
 		$t1->setPst(0.07);
 		$t1->setGst(0.05);
 		$t1->setAgg(0.12);
@@ -63,7 +66,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t1c= $t1->getIsoCode();
 		$this->rateMap[$t1c] = $t1;
 
-		$t2 = new CanadaTaxObject(self::PROVINCE_ALBERTA, self::PROVINCE_ALBERTA_ISO);
+		$t2 = new CustomTaxObject(self::PROVINCE_ALBERTA, self::PROVINCE_ALBERTA_ISO);
 		$t2->setPst(0.0);
 		$t2->setGst(0.05);
 		$t2->setAgg(0.05);
@@ -71,7 +74,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t2c= $t2->getIsoCode();
 		$this->rateMap[$t2c] = $t2;
 
-		$t3 = new CanadaTaxObject(self::PROVINCE_SASKATCHEWAN, self::PROVINCE_SASKATCHEWAN_ISO);
+		$t3 = new CustomTaxObject(self::PROVINCE_SASKATCHEWAN, self::PROVINCE_SASKATCHEWAN_ISO);
 		$t3->setPst(0.05);
 		$t3->setGst(0.05);
 		$t3->setAgg(0.10);
@@ -79,7 +82,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t3c= $t3->getIsoCode();
 		$this->rateMap[$t3c] = $t3;
 
-		$t4 = new CanadaTaxObject(self::PROVINCE_MANITOBA, self::PROVINCE_MANITOBA_ISO);
+		$t4 = new CustomTaxObject(self::PROVINCE_MANITOBA, self::PROVINCE_MANITOBA_ISO);
 		$t4->setPst(0.07);
 		$t4->setGst(0.05);
 		$t4->setAgg(0.12);
@@ -87,7 +90,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t4c= $t4->getIsoCode();
 		$this->rateMap[$t4c] = $t4;
 
-		$t5 = new CanadaTaxObject(self::PROVINCE_ONTARIO, self::PROVINCE_ONTARIO_ISO);
+		$t5 = new CustomTaxObject(self::PROVINCE_ONTARIO, self::PROVINCE_ONTARIO_ISO);
 		$t5->setPst(0.0);
 		$t5->setGst(0.13);
 		$t5->setAgg(0.13);
@@ -95,7 +98,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t5c= $t5->getIsoCode();
 		$this->rateMap[$t5c] = $t5;
 
-		$t6 = new CanadaTaxObject(self::PROVINCE_QUEBEC, self::PROVINCE_QUEBEC_ISO);
+		$t6 = new CustomTaxObject(self::PROVINCE_QUEBEC, self::PROVINCE_QUEBEC_ISO);
 		$t6->setPst(0.09975);
 		$t6->setGst(0.05);
 		$t6->setAgg(0.14975);
@@ -103,7 +106,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t6c= $t6->getIsoCode();
 		$this->rateMap[$t6c] = $t6;
 
-		$t7 = new CanadaTaxObject(self::PROVINCE_NEW_BRUNSWICK, self::PROVINCE_NEW_BRUNSWICK_ISO);
+		$t7 = new CustomTaxObject(self::PROVINCE_NEW_BRUNSWICK, self::PROVINCE_NEW_BRUNSWICK_ISO);
 		$t7->setPst(0.0);
 		$t7->setGst(0.13);
 		$t7->setAgg(0.13);
@@ -111,7 +114,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t7c= $t7->getIsoCode();
 		$this->rateMap[$t7c] = $t7;
 
-		$t8 = new CanadaTaxObject(self::PROVINCE_NEWFOUNDLAND, self::PROVINCE_NEWFOUNDLAND_ISO);
+		$t8 = new CustomTaxObject(self::PROVINCE_NEWFOUNDLAND, self::PROVINCE_NEWFOUNDLAND_ISO);
 		$t8->setPst(0.0);
 		$t8->setGst(0.13);
 		$t8->setAgg(0.13);
@@ -119,7 +122,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t8c= $t8->getIsoCode();
 		$this->rateMap[$t8c] = $t8;
 
-		$t9 = new CanadaTaxObject(self::PROVINCE_NOVA_SCOTIA, self::PROVINCE_NOVA_SCOTIA_ISO);
+		$t9 = new CustomTaxObject(self::PROVINCE_NOVA_SCOTIA, self::PROVINCE_NOVA_SCOTIA_ISO);
 		$t9->setPst(0.0);
 		$t9->setGst(0.15);
 		$t9->setAgg(0.15);
@@ -127,7 +130,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t9c= $t9->getIsoCode();
 		$this->rateMap[$t9c] = $t9;
 
-		$t10 = new CanadaTaxObject(self::PROVINCE_PRICE_EDWARD_ISLAND, self::PROVINCE_PRICE_EDWARD_ISLAND_ISO);
+		$t10 = new CustomTaxObject(self::PROVINCE_PRICE_EDWARD_ISLAND, self::PROVINCE_PRICE_EDWARD_ISLAND_ISO);
 		$t10->setPst(0.0);
 		$t10->setGst(0.14);
 		$t10->setAgg(0.14);
@@ -135,7 +138,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t10c= $t10->getIsoCode();
 		$this->rateMap[$t10c] = $t10;
 
-		$t11 = new CanadaTaxObject(self::PROVINCE_NORTHWEST_TERRITORIES, self::PROVINCE_NORTHWEST_TERRITORIES_ISO);
+		$t11 = new CustomTaxObject(self::PROVINCE_NORTHWEST_TERRITORIES, self::PROVINCE_NORTHWEST_TERRITORIES_ISO);
 		$t11->setPst(0.0);
 		$t11->setGst(0.05);
 		$t11->setAgg(0.05);
@@ -143,7 +146,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$t11c= $t11->getIsoCode();
 		$this->rateMap[$t11c] = $t11;
 
-		$t12 = new CanadaTaxObject(self::PROVINCE_YUKON, self::PROVINCE_YUKON_ISO);
+		$t12 = new CustomTaxObject(self::PROVINCE_YUKON, self::PROVINCE_YUKON_ISO);
 		$t12->setPst(0.0);
 		$t12->setGst(0.05);
 		$t12->setAgg(0.05);
@@ -188,63 +191,6 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 	}
 
 	
-}
-
-class CanadaTaxObject{
-	private $pst;
-	private $gst;
-	private $agg;
-	private $name;
-	private $isoCode;
-
-	public function __construct($name, $iso)
-	{
-		$this->pst=0.0;
-		$this->gst=0.0;
-		$this->agg=0.0;
-		$this->name=$name;
-		$this->isoCode=$iso;
-	}
-
-	public function getPst(){
-		return $this->pst;
-	}
-
-	public function setPst($pst){
-		$this->pst = $pst;
-	}
-
-	public function getGst(){
-		return $this->gst;
-	}
-
-	public function setGst($gst){
-		$this->gst = $gst;
-	}
-
-	public function getAgg(){
-		return $this->agg;
-	}
-
-	public function setAgg($agg){
-		$this->agg = $agg;
-	}
-
-	public function getName(){
-		return $this->name;
-	}
-
-	public function setName($name){
-		$this->name = $name;
-	}
-
-	public function getIsoCode(){
-		return $this->isoCode;
-	}
-
-	public function setIsoCode($isoCode){
-		$this->isoCode = $isoCode;
-	}
 }
 
 ?>

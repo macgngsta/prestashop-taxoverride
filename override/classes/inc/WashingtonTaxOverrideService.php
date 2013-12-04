@@ -14,6 +14,7 @@
 *  This defines a class used to obtain taxrate from the state of Washington using their provided API
 *  http://dor.wa.gov/AddressRates.aspx?output=xml&addr=&city=&zip=98501
 */
+require_once('TaxOverrideService.php');
 
 //----------------------------------------
 // WashingtonTaxOverrideService Class
