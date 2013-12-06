@@ -1,4 +1,5 @@
 <?php
+
 /*
 *  2013
 *  v1.0 - initial implementation
@@ -23,6 +24,7 @@ include('inc/WashingtonTaxOverrideService.php');
 include('inc/CanadaTaxOverrideService.php');
 include('inc/CaliforniaTaxOverrideService.php');
 
+
 //log doesnt seem to work
 TaxRulesGroup::$klogger = new KLogger('logs/', KLogger::INFO);
 
@@ -36,7 +38,7 @@ class TaxRulesGroup extends TaxRulesGroupCore
 		//get the cart
 		global $cart;
 
-		self::$klogger->logInfo('enter getTaxes...');
+		//self::$klogger->logInfo('enter getTaxes...');
 		//var_dump(self::$klogger);
 
 	    if (empty($id_tax_rules_group) OR empty($id_country))
@@ -80,12 +82,12 @@ class TaxRulesGroup extends TaxRulesGroupCore
 			}
 			else
 			{
-				echo "status no good";
+				//echo "status no good";
 			}
 		}
 		else
 		{
-			echo "response not valid";
+			//echo "response not valid";
 			self::$klogger->logInfo('override response was not valid: ', $tOverrideResponse);
 		}
 
@@ -149,7 +151,7 @@ class TaxRulesGroup extends TaxRulesGroupCore
 	    self::$_taxes[$id_tax_rules_group.'-'.$id_country.'-'.$id_state.'-'.$id_county] = $taxes;
 
 	    //var_dump($taxes);
-	    echo "running default.";
+	    //echo "running default.";
 
        return $taxes;
 	}
@@ -240,12 +242,12 @@ class TaxRulesGroup extends TaxRulesGroupCore
 			}
 			else
 			{
-				echo "status no good";
+				//echo "status no good";
 			}
 		}
 		else
 		{
-			echo "response not valid";
+			//echo "response not valid";
 		}
 
 		/*------------------------------------------------------*
@@ -274,3 +276,4 @@ class TaxRulesGroup extends TaxRulesGroupCore
 	}
 }
 
+?>
