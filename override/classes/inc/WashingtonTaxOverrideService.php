@@ -118,13 +118,13 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 				switch($code){
 					case self::SUCCESS_RESULT:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
-					break;
+						break;
 					case self::INVALID_RESULT:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_NO_RESULTS);
-					break;
+						break;
 					case self::INVALID_REQUEST:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_INVALID_REQ);
-					break;
+						break;
 					default:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_INVALID_RESP);
 				}

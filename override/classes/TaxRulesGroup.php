@@ -161,12 +161,15 @@ class TaxRulesGroup extends TaxRulesGroupCore
 		$tOverride = new DefaultTaxOverrideService();
 		$tOverrideResponse = new TaxRateOverrideResponse();
 
+		$hasValidReq=false;
+
 		$country = new Country((int)$id_country);
 		$state = new State((int)$id_state);
 
 		if($country->iso_code === "US"){
 			//set state
 			$tOverrideRequest->setState($state->iso_code);
+			$hasValidReq=true;
 
 			if($state->iso_code === "WA"){
 
@@ -203,18 +206,19 @@ class TaxRulesGroup extends TaxRulesGroupCore
 			}
 		}
 		else if($country->iso_code === "CA"){
+			$hasValidReq=true;
 			$tOverrideRequest->setState($state->iso_code);
 
 			$tOverride = new CanadaTaxOverrideService();
 			$tOverrideResponse = $tOverride->getTaxRate($tOverrideRequest);
 
-
-			//echo "detected Canada";
-			//echo $tOverrideResponse;
 			self::$klogger->logInfo('detected Canada country: ', $tOverrideResponse);
 		}
 
-		self::$klogger->logInfo('original request: ', $tOverrideRequest);
+		if($hasValidReq)
+		{
+			self::$klogger->logInfo('original request: ', $tOverrideRequest);	
+		}
 
 		return $tOverrideResponse;
 	}
