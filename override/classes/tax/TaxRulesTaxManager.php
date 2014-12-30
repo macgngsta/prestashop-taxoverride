@@ -14,18 +14,18 @@
 
 ini_set('allow_url_fopen','on');
 
-include('inc/KLogger.php');
+//include('inc/KLogger.php');
 include('inc/TaxOverrideService.php');
 include('inc/WashingtonTaxOverrideService.php');
 include('inc/CanadaTaxOverrideService.php');
 include('inc/CaliforniaTaxOverrideService.php');
 
-//log doesnt seem to work
-TaxRulesGroup::$klogger = new KLogger('logs/', KLogger::INFO);
+//TaxRulesTaxManager::$klogger = new KLogger('logs/', KLogger::INFO);
 
-
-class TaxRulesTaxManagerCore extends TaxRulesTaxManagerCore implements TaxManagerInterface
+class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInterface
 {
+	//public static $klogger;
+
 	// use admin > localization > countries
 	// by default UNITED STATES = 21, CANADA = 4
 	// for states CALIFORNIA= 5, WASHINGTON= 47
@@ -34,8 +34,6 @@ class TaxRulesTaxManagerCore extends TaxRulesTaxManagerCore implements TaxManage
 	const LOCALIZATION_ID_STATE_CALIFORNIA = 5;
 	const LOCALIZATION_ID_STATE_WASHINGTON = 47;
 	const LOCALIZATION_ID_INVALID = -1;
-
-	public static $klogger;
 
 	public $address;
 	public $type;
@@ -87,14 +85,14 @@ class TaxRulesTaxManagerCore extends TaxRulesTaxManagerCore implements TaxManage
 			$postcode = $this->address->postcode;
 
 
-		$customCalculator = $this->getOverrideCalculator($this->$address);
+		$customCalculator = $this->getOverrideCalculator($this->address);
 		//check to see if there are any overrides
 		if($customCalculator!=null){
 			return $customCalculator;
 		}
 		else{
 			//use default tax calculator
-			return $this->getDefaultTaxCalculator($postcode, $taxes)
+			return $this->getDefaultTaxCalculator($postcode, $taxes);
 		}
 	}
 
@@ -114,7 +112,9 @@ class TaxRulesTaxManagerCore extends TaxRulesTaxManagerCore implements TaxManage
 		try{
 			$state = State::getNameById($address->id_state);
 			$tOverrideRequest->setState($state);
-		}
+		} catch (Exception $e) {
+		    //self::$klogger->logInfo('exception: ', $e->getMessage());
+		} 
 
 		$country_id = self::LOCALIZATION_ID_INVALID;
 		if(!empty($address->id_country)){
