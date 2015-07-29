@@ -10,7 +10,7 @@
 *
 */
 
-class CustomTax extends TaxCore extends ObjectModel
+class CustomTax extends TaxCore
 {
 	public function delete()
 	{

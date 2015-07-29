@@ -38,8 +38,10 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 		$t1->setGst(0.09);
 		$t1->setAgg(0.09);
 
-		$t1c= $t1->getIsoCode();
+		$t1c= strtolower($t1->getName());
+		$t1iso= strtolower($t1->getIsoCode());
 		$this->rateMap[$t1c] = $t1;
+		$this->rateMap[$t1iso] = $t1;
 	}
 
 	public function getTaxRate($tRequest){
@@ -47,9 +49,20 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 		$tResponse = new TaxRateOverrideResponse();
 		
 		if($this->isTaxRequestValid($tRequest)){
-			$s = $tRequest->getState();
-			if(!empty($s)){
-				$cRate = $this->rateMap[$s];
+			
+			$toFindKey = "";
+
+			$stateFull = $tRequest->getState();
+			$stateFull = strtolower($stateFull);
+
+			PrestaShopLogger::addLog("Tax Override: querying cali state = ".$stateFull, 1);
+
+			if(array_key_exists($stateFull, $this->rateMap)){
+				$toFindKey = $stateFull;
+			}
+
+			if(!empty($toFindKey)){
+				$cRate = $this->rateMap[$toFindKey];
 
 				if(!empty($cRate)){
 					$tResponse->setLocationCode($cRate->getIsoCode());
@@ -58,7 +71,12 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 					$tResponse->setStateRate($cRate->getGst());
 					$tResponse->setLocalRate($cRate->getPst());
 					$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
+
+					PrestaShopLogger::addLog("Tax Override: found cali,usa tax = ".$cRate->getAgg(), 1);
 				}
+			}
+			else{
+				PrestaShopLogger::addLog("Tax Override: could not find cali,usa state = ".$stateFull, 2);
 			}
 		}
 		

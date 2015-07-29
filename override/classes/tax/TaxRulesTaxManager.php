@@ -14,13 +14,11 @@
 
 ini_set('allow_url_fopen','on');
 
-//include('inc/KLogger.php');
+include('CustomTax.php');
 include('inc/TaxOverrideService.php');
 include('inc/WashingtonTaxOverrideService.php');
 include('inc/CanadaTaxOverrideService.php');
 include('inc/CaliforniaTaxOverrideService.php');
-
-//TaxRulesTaxManager::$klogger = new KLogger('logs/', KLogger::INFO);
 
 class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInterface
 {
@@ -86,11 +84,14 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 
 
 		$customCalculator = $this->getOverrideCalculator($this->address);
+
 		//check to see if there are any overrides
-		if($customCalculator!=null){
+		if(!is_null($customCalculator)){
+			PrestaShopLogger::addLog("Tax Override: custom calculator", 1);
 			return $customCalculator;
 		}
 		else{
+			PrestaShopLogger::addLog("Tax Override: default calculator", 1);
 			//use default tax calculator
 			return $this->getDefaultTaxCalculator($postcode, $taxes);
 		}
@@ -113,7 +114,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 			$state = State::getNameById($address->id_state);
 			$tOverrideRequest->setState($state);
 		} catch (Exception $e) {
-		    //self::$klogger->logInfo('exception: ', $e->getMessage());
+		    PrestaShopLogger::addLog("Tax Override: exception = ".$e->getMessage(), 2);
 		} 
 
 		$country_id = self::LOCALIZATION_ID_INVALID;
@@ -133,11 +134,13 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 				}
 
 				if($state_id!=self::LOCALIZATION_ID_INVALID){
+					/*
 					if($state_id==self::LOCALIZATION_ID_STATE_CALIFORNIA){
 						//use california
 						$tOverride = new CaliforniaTaxOverrideService();
 					}
-					else if($state_id==self::LOCALIZATION_ID_STATE_WASHINGTON){
+					*/
+					if($state_id==self::LOCALIZATION_ID_STATE_WASHINGTON){
 						//use washington
 						$tOverride = new WashingtonTaxOverrideService();
 						
@@ -177,7 +180,11 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 					$taxes[]=$localTax;
 
 					$customTaxCalc = new TaxCalculator($taxes, TaxCalculator::COMBINE_METHOD);
+
 					return $customTaxCalc;
+				}
+				else{
+					PrestaShopLogger::addLog("Tax Override: status not successful", 2);
 				}
 			}
 		}

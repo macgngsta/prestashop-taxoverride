@@ -42,21 +42,30 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 
 		$tResponse = new TaxRateOverrideResponse();
 		$url=$this->buildUrl($tRequest);
-
-		//echo $url;
+		$params = $this->buildParams($tRequest);
 
 		if(!empty($url)){
+			$url = $url.'?'.http_build_query($params, '', '&');
+
+			PrestaShopLogger::addLog("Tax Override: wa url = ".$url, 1);
 
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_FAILONERROR,1);
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 			// get the result of http query
 			$content = curl_exec($ch);
+
 			curl_close($ch);
 
 			$xml = simplexml_load_string($content);
+			PrestaShopLogger::addLog("Tax Override: wa content = ".$xml, 1);
 
 			//print_r($xml);
+			//die;
 
 			$tResponse = $this->readXml($xml);
 		}
@@ -83,6 +92,22 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 		return false;
 	}
 
+	private function buildParams($tRequest){
+		$params=array();
+
+		if($this->isTaxRequestValid($tRequest)){
+			$params['output']=$tRequest->getFmt();
+			$params['addr']=$tRequest->getAddress();
+			$params['city']=$tRequest->getCity();
+			$params['zip']=$tRequest->getZip();
+
+			PrestaShopLogger::addLog("Tax Override: querying wa,usa tax = ".$tRequest->getCity()." ".$tRequest->getZip(), 1);
+		}
+
+		return $params;
+	}
+
+
 	private function buildUrl($tRequest){
 		$url="";
 
@@ -90,18 +115,6 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			$url.=$this->host;
 			$url.="/";
 			$url.=$this->endpoint;
-			$url.="?";
-			$url.="output=";
-			$url.=$tRequest->getFmt();
-			$url.="&";
-			$url.="addr=";
-			$url.=$tRequest->getAddress();
-			$url.="&";
-			$url.="city=";
-			$url.=$tRequest->getCity();
-			$url.="&";
-			$url.="zip=";
-			$url.=$tRequest->getZip();
 		}
 
 		return $url;
@@ -139,6 +152,7 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			$tResponse->setStateRate($xml->rate->attributes()->staterate);
 			$tResponse->setLocalRate($xml->rate->attributes()->localrate);
 
+			PrestaShopLogger::addLog("Tax Override: found wa,usa tax = ".$xml->attributes()->rate, 1);
 		}
 
 		return $tResponse;

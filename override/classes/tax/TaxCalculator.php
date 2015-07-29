@@ -15,12 +15,18 @@ class TaxCalculator extends TaxCalculatorCore
 {
 	public function __construct(array $taxes = array(), $computation_method = TaxCalculator::COMBINE_METHOD)
 	{
-		// sanity check
-		foreach ($taxes as $tax)
-			if (!($tax instanceof CustomTax) || !($tax instanceof Tax))
-				throw new Exception('Invalid Custom Tax Object');
+		$validTaxes = array();
 
-		$this->taxes = $taxes;
+		if(!empty($taxes)){
+			// sanity check
+			foreach ($taxes as $tax){
+				if (!is_null($tax)){
+					$validTaxes[]=$tax;
+				}
+			}
+		}
+
+		$this->taxes = $validTaxes;
 		$this->computation_method = (int)$computation_method;
 	}
 }
