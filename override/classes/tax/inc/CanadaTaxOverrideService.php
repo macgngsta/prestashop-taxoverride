@@ -2,6 +2,7 @@
 /*
 *  2013
 *  v1.0 - initial implementation
+*  v1.01 - effective july 1, 2016 - New Brunswick and Newfoundland increased HST from 13% to 15%
 *
 *  DISCLAIMER
 *
@@ -120,8 +121,8 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 
 		$t7 = new CustomTaxObject(self::PROVINCE_NEW_BRUNSWICK, self::PROVINCE_NEW_BRUNSWICK_ISO);
 		$t7->setPst(0.0);
-		$t7->setGst(0.13);
-		$t7->setAgg(0.13);
+		$t7->setGst(0.15);
+		$t7->setAgg(0.15);
 
 		$t7c= strtolower($t7->getIsoCode());
 		$t7full= strtolower($t7->getName());
@@ -130,8 +131,8 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 
 		$t8 = new CustomTaxObject(self::PROVINCE_NEWFOUNDLAND, self::PROVINCE_NEWFOUNDLAND_ISO);
 		$t8->setPst(0.0);
-		$t8->setGst(0.13);
-		$t8->setAgg(0.13);
+		$t8->setGst(0.15);
+		$t8->setAgg(0.15);
 
 		$t8c= strtolower($t8->getIsoCode());
 		$t8full= strtolower($t8->getName());
