@@ -18,7 +18,7 @@
 
 ini_set('allow_url_fopen','on');
 
-require_once('CustomTax.php');
+require_once('Tax.php');
 require_once('inc/TaxOverrideService.php');
 require_once('inc/WashingtonTaxOverrideService.php');
 require_once('inc/CanadaTaxOverrideService.php');
@@ -111,16 +111,13 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		$logId=round(microtime(true) * 1000);
 		$customCalculator = $this->getOverrideCalculator($logId, $this->address);
 
-		var_dump($customCalculator);
-		die;
-
 		//check to see if there are any overrides
 		if(!is_null($customCalculator)){
-			PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > custom calculator", 1);
+			//PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > custom calculator", 1);
 			return $customCalculator;
 		}
 		else{
-			PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > default calculator", 1);
+			//PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > default calculator", 1);
 			//use default tax calculator
 			return $this->getDefaultTaxCalculator();
 		}
@@ -181,33 +178,53 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		}
 
 		if($tOverride != null){
-			$tOverrideResponse = $tOverride->getTaxRate($tOverrideRequest);
-			if($tOverrideResponse!=null && $tOverrideResponse->isValid())
-			{
-				if($tOverrideResponse->getStatus() == TaxRateOverrideResponse::STATUS_SUCCESS){
-					$taxes = array();
 
-					//create state
-					$stateTax = new CustomTax();
-					$stateTax->name=$tOverrideRequest->getState()."_tax";
-					$stateTax->rate=$tOverrideResponse->getStateRate()*100;
-					$stateTax->active=true;
+			$cacheId = $tOverrideRequest->buildCacheKey();
+			//extraneous messenging
+			//PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > cache key: ".$cacheId, 1);
 
-					//create local
-					$localTax = new CustomTax();
-					$localTax->name=$tOverrideResponse->getLocationName()."_tax";
-					$localTax->rate=$tOverrideResponse->getLocalRate()*100;
-					$localTax->active=true;
+			//check cache
+			if (!empty($cacheId) && Cache::isStored($cacheId)) {
+				//PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > using cache", 1);
+				//return the cached version
+				return Cache::retrieve($cacheId);
+			}
+			else{
+				$tOverrideResponse = $tOverride->getTaxRate($tOverrideRequest);
 
-					$taxes[]=$stateTax;
-					$taxes[]=$localTax;
+				if($tOverrideResponse!=null && $tOverrideResponse->isValid())
+				{
+					if($tOverrideResponse->getStatus() == TaxRateOverrideResponse::STATUS_SUCCESS){
+						$taxes = array();
 
-					$customTaxCalc = new TaxCalculator($taxes, TaxCalculator::COMBINE_METHOD);
+						//create state
+						$stateTax = new Tax(true);
+						$stateTax->name=$tOverrideRequest->getState()."_tax";
+						$stateTax->rate=$tOverrideResponse->getStateRate()*100;
+						$stateTax->active=true;
 
-					return $customTaxCalc;
-				}
-				else{
-					PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > status not successful", 1);
+						//create local
+						$localTax = new Tax(true);
+						$localTax->name=$tOverrideResponse->getLocationName()."_tax";
+						$localTax->rate=$tOverrideResponse->getLocalRate()*100;
+						$localTax->active=true;
+
+						$taxes[]=$stateTax;
+						$taxes[]=$localTax;
+
+						$customTaxCalc = new TaxCalculator($taxes, TaxCalculator::COMBINE_METHOD);
+						
+						//write to cache
+						if(!empty($cacheId) && !is_null($customTaxCalc)){
+							 Cache::store($cacheId, $customTaxCalc);
+							 PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > writing to cache", 1);
+						}
+
+						return $customTaxCalc;
+					}
+					else{
+						PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > status not successful", 1);
+					}
 				}
 			}
 		}

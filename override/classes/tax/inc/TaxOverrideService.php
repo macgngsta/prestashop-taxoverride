@@ -109,6 +109,30 @@ class TaxRateOverrideRequest{
 	public function setState($state){
 		$this->state = $state;
 	}
+
+	public function buildCacheKey(){
+		$result='';
+
+		$temp='';
+		if(!empty($this->state)){
+			$temp.=strtolower(trim($this->state));
+		}
+		if(!empty($this->zip)){
+			$temp.=strtolower(trim($this->zip));
+		}
+		if(!empty($this->city)){
+			$temp.=strtolower(trim($this->city));
+		}
+		if(!empty($this->address)){
+			$temp.=strtolower(trim($this->address));
+		}
+
+		if(!empty($temp)){
+			$result= md5($temp);
+		}
+
+		return $result;
+	}
 }
 
 //----------------------------------------
