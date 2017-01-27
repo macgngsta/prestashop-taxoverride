@@ -15,65 +15,126 @@
 *  http://dor.wa.gov/AddressRates.aspx?output=xml&addr=&city=&zip=98501
 */
 require_once('TaxOverrideService.php');
-require_once('CustomTaxObject.php');
+require_once('model/CustomTaxObject.php');
+require_once('util/CurlHelper.php');
 
 //----------------------------------------
 // WashingtonTaxOverrideService Class
 //----------------------------------------
 
 class WashingtonTaxOverrideService implements iTaxOverrideService{
-	const HOST="http://dor.wa.gov";
+	const HOST="dor.wa.gov";
 	const ENDPOINT="AddressRates.aspx";
 
 	const SUCCESS_RESULT="2";
 	const INVALID_RESULT="3";
 	const INVALID_REQUEST="4";
 
+	const CURL_STATUS_UNKNOWN_ERROR=-1;
+	const CURL_STATUS_SUCCESS=1;
+	const CURL_STATUS_CLIENT_ERROR=2;
+	const CURL_STATUS_SERVER_ERROR=3;
+
+	const ENABLE_CURL=false;
+
 	private $host;
 	private $endpoint;
+	private $logId;
 
-	public function __construct()
+	//----------------------------------------
+
+	public function __construct($logId)
 	{
 		$this->host=self::HOST;
 		$this->endpoint=self::ENDPOINT;
+		$this->logId=$logId;
 	}
 
+	//----------------------------------------
+
 	public function getTaxRate($tRequest){
+		if(self::ENABLE_CURL){
+			return $this->getTaxRateWithCurl($tRequest);
+		}
+		else{
+			return $this->getTaxRateWithSimple($tRequest);
+		}
+	}
 
-		//print_r($tRequest);
-		//die;
+	//----------------------------------------
 
-		$tResponse = new TaxRateOverrideResponse();
-		$url=$this->buildUrl($tRequest);
-		$params = $this->buildParams($tRequest);
+	private function getTaxRateWithSimple($tRequest){
+		$tResponse=null;
 
-		if(!empty($url)){
-			$url = $url.'?'.http_build_query($params, '', '&');
+		PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > selected Simple", 1);
 
-			PrestaShopLogger::addLog("Tax Override: wa url = ".$url, 1);
+		if(self::isTaxRequestValid($tRequest)){
+			$tResponse = new TaxRateOverrideResponse();
+			$url=$this->buildUrl($tRequest);
+			$params = $this->buildParams($tRequest);
 
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_FAILONERROR,1);
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			// get the result of http query
-			$content = curl_exec($ch);
+			if(!empty($url)){
+				$url = $url.'?'.http_build_query($params, '', '&');
 
-			curl_close($ch);
+				try{
+					$content = file_get_contents($url);
+					if($content === false){
+						PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > simple content empty", 1);
+					}
+					else{
+						$xml = simplexml_load_string($content);
+						$tResponse = $this->readXml($xml);
+					}
+				}
+				catch(Exception $e){
+					PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > simple exception = ".$e, 1);
+				}
+			}
+		}		
 
-			$xml = simplexml_load_string($content);
-			PrestaShopLogger::addLog("Tax Override: wa content = ".$xml, 1);
+		return $tResponse;
+	}
 
-			//print_r($xml);
-			//die;
+	//----------------------------------------
 
-			$tResponse = $this->readXml($xml);
+	private function getTaxRateWithCurl($tRequest){
+		$tResponse=null;
+		
+		PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > selected Curl", 1);
+
+		if(self::isTaxRequestValid($tRequest)){
+			$tResponse = new TaxRateOverrideResponse();
+			$url=$this->buildUrl($tRequest);
+			$params = $this->buildParams($tRequest);
+
+			if(!empty($url)){
+				$tparams = http_build_query($params, '', '&');
+				$toCurl = new CurlHelper ($url, $tparams, null, false);
+				$toCurl->execute();
+
+				switch($sCode)
+				{
+					case self::CURL_STATUS_SUCCESS:
+						PrestaShopLogger::addLog("WashingtonTaxOverrideService ".$this->logId." > wa content = ".$content, 1);
+						$xml = simplexml_load_string($content);
+						$tResponse = $this->readXml($xml);
+						break;
+					case self::CURL_STATUS_CLIENT_ERROR:
+						PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > curl request was invalid", 1);
+						break;
+					case self::CURL_STATUS_SERVER_ERROR:
+						PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > curl server encountered an error: ".$toCurl->getError(), 1);
+						break;
+					case self::CURL_STATUS_UNKNOWN_ERROR:
+					default:
+						PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > curl something awful happened: ".$toCurl->getError(), 1);
+				}
+			}
 		}
 		return $tResponse;
 	}
+
+	//----------------------------------------
 
 	private function isTaxRequestValid($tRequest){
 		
@@ -92,10 +153,12 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			}
 		}
 
-		PrestaShopLogger::addLog("Tax Override: invalid wa,usa tax request", 2);
+		PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > invalid wa,usa tax request", 1);
 
 		return false;
 	}
+
+	//----------------------------------------
 
 	private function buildParams($tRequest){
 		$params=array();
@@ -106,12 +169,13 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			$params['city']=$tRequest->getCity();
 			$params['zip']=$tRequest->getZip();
 
-			PrestaShopLogger::addLog("Tax Override: querying wa,usa tax = ".$tRequest->getCity()." ".$tRequest->getZip(), 1);
+			PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > querying wa,usa tax = ".$tRequest->getCity()." ".$tRequest->getZip(), 1);
 		}
 
 		return $params;
 	}
 
+	//----------------------------------------
 
 	private function buildUrl($tRequest){
 		$url="";
@@ -125,7 +189,7 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 		return $url;
 	}
 
-
+	//----------------------------------------
 
 	private function readXml($xml){
 		$tResponse = new TaxRateOverrideResponse();
@@ -162,11 +226,13 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 				$tResponse->setLocalRate($xml->rate->attributes()->localrate);
 			}
 
-			PrestaShopLogger::addLog("Tax Override: found wa,usa tax = ".$xml->attributes()->rate, 1);
+			PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > found wa,usa tax = ".$xml->attributes()->rate, 1);
 		}
 
 		return $tResponse;
 	}
+
+	//----------------------------------------
 }
 
 ?>

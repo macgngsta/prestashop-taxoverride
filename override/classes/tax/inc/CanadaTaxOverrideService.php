@@ -15,7 +15,7 @@
 */
 
 require_once('TaxOverrideService.php');
-require_once('CustomTaxObject.php');
+require_once('model/CustomTaxObject.php');
 
 //----------------------------------------
 // CanadaTaxOverrideService Class
@@ -51,13 +51,19 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 	const PROVINCE_YUKON_ISO="YT";
 
 	private $rateMap;
+	private $logId;
 
-	public function __construct()
+	//----------------------------------------
+
+	public function __construct($logId)
 	{
 		$this->rateMap = array();
 		$this->buildMap();
+		$this->logId=$logId;
 	}
 
+	//----------------------------------------
+	
 	private function buildMap(){
 		$t1 = new CustomTaxObject(self::PROVINCE_BRITISH_COLUMBIA, self::PROVINCE_BRITISH_COLUMBIA_ISO);
 		$t1->setPst(0.07);
@@ -180,6 +186,8 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		$this->rateMap[$t12full] = $t12;
 	}
 
+	//----------------------------------------
+
 	private function isTaxRequestValid($tRequest){
 		
 		if(is_object($tRequest)){
@@ -192,6 +200,8 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 		return false;
 	}
 
+	//----------------------------------------
+
 	public function getTaxRate($tRequest){
 
 		$tResponse = new TaxRateOverrideResponse();
@@ -203,7 +213,7 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 			$stateFull = $tRequest->getState();
 			$stateFull = strtolower($stateFull);
 
-			PrestaShopLogger::addLog("Tax Override: querying canada province = ".$stateFull, 1);
+			PrestaShopLogger::addLog("CanadaTaxOverrideService: ".$this->logId." > querying canada province = ".$stateFull, 1);
 
 			if(array_key_exists($stateFull, $this->rateMap)){
 				$toFindKey = $stateFull;
@@ -220,17 +230,18 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 					$tResponse->setLocalRate($cRate->getPst());
 					$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
 
-					PrestaShopLogger::addLog("Tax Override: found canada tax = ".$cRate->getAgg(), 1);
+					PrestaShopLogger::addLog("CanadaTaxOverrideService: ".$this->logId." > found canada tax = ".$cRate->getAgg(), 1);
 				}
 			}
 			else{
-				PrestaShopLogger::addLog("Tax Override: could not find canada province = ".$stateFull, 2);
+				PrestaShopLogger::addLog("CanadaTaxOverrideService: ".$this->logId." > could not find canada province = ".$stateFull, 1);
 			}
 		}
 
 		return $tResponse;
 	}
 
+	//----------------------------------------
 	
 }
 

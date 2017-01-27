@@ -16,19 +16,19 @@ require_once('TaxOverrideService.php');
 require_once('model/CustomTaxObject.php');
 
 //----------------------------------------
-// CaliforniaTaxOverrideService Class
+// GeorgiaTaxOverrideService Class
 //----------------------------------------
 
-class CaliforniaTaxOverrideService implements iTaxOverrideService {
+class GeorgiaTaxOverrideService implements iTaxOverrideService {
 	
-	const STATE_CALIFORNIA="California";
-	const STATE_CALIFORNIA_ISO="CA";	
+	const STATE_GEORGIA="Georgia";
+	const STATE_GEORGIA_ISO="GA";	
 
 	private $rateMap;
 	private $logId;
 
 	//----------------------------------------
-
+	
 	public function __construct($logId)
 	{
 		$this->rateMap = array();
@@ -39,10 +39,10 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 	//----------------------------------------
 
 	private function buildMap(){
-		$t1 = new CustomTaxObject(self::STATE_CALIFORNIA, self::STATE_CALIFORNIA_ISO);
+		$t1 = new CustomTaxObject(self::STATE_GEORGIA, self::STATE_GEORGIA_ISO);
 		$t1->setPst(0.00);
-		$t1->setGst(0.0875);
-		$t1->setAgg(0.0875);
+		$t1->setGst(0.07);
+		$t1->setAgg(0.07);
 
 		$t1c= strtolower($t1->getName());
 		$t1iso= strtolower($t1->getIsoCode());
@@ -63,7 +63,7 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 			$stateFull = $tRequest->getState();
 			$stateFull = strtolower($stateFull);
 
-			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > querying cali state = ".$stateFull, 1);
+			PrestaShopLogger::addLog("GeorgiaTaxOverrideService: ".$this->logId." > querying georgia state = ".$stateFull, 1);
 
 			if(array_key_exists($stateFull, $this->rateMap)){
 				$toFindKey = $stateFull;
@@ -80,11 +80,11 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 					$tResponse->setLocalRate($cRate->getPst());
 					$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
 
-					PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > found cali,usa tax = ".$cRate->getAgg(), 1);
+					PrestaShopLogger::addLog("GeorgiaTaxOverrideService: ".$this->logId." > found georgia,usa tax = ".$cRate->getAgg(), 1);
 				}
 			}
 			else{
-				PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > could not find cali,usa state = ".$stateFull, 1);
+				PrestaShopLogger::addLog("GeorgiaTaxOverrideService: ".$this->logId." > could not find georgia,usa state = ".$stateFull, 1);
 			}
 		}
 		

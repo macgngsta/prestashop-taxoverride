@@ -3,6 +3,7 @@
 *  2014
 *  v1.0 - use interface
 *  v1.1 - updated for prestashop 1.6
+*  v1.2 - added logging, added enablement
 *
 *  DISCLAIMER
 *  Use at own risk
@@ -12,26 +13,35 @@
 *  Override existing taxrulestaxmanager to add in some override tax rules
 */
 
+//this should already be set:
+// https://my.1and1.com/ExtPhpIni?__lf=HomeFlow
+
 ini_set('allow_url_fopen','on');
 
-include('CustomTax.php');
-include('inc/TaxOverrideService.php');
-include('inc/WashingtonTaxOverrideService.php');
-include('inc/CanadaTaxOverrideService.php');
-include('inc/CaliforniaTaxOverrideService.php');
+require_once('CustomTax.php');
+require_once('inc/ITaxOverrideService.php');
+require_once('inc/WashingtonTaxOverrideService.php');
+require_once('inc/CanadaTaxOverrideService.php');
+require_once('inc/CaliforniaTaxOverrideService.php');
+require_once('inc/GeorgiaTaxOverrideService.php');
 
 class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInterface
 {
-	//public static $klogger;
-
 	// use admin > localization > countries
 	// by default UNITED STATES = 21, CANADA = 4
 	// for states CALIFORNIA= 5, WASHINGTON= 47
 	const LOCALIZATION_ID_COUNTRY_UNITED_STATES = 21;
 	const LOCALIZATION_ID_COUNTRY_CANADA = 4;
 	const LOCALIZATION_ID_STATE_CALIFORNIA = 5;
+	const LOCALIZATION_ID_STATE_GEORGIA= 10;
 	const LOCALIZATION_ID_STATE_WASHINGTON = 47;
 	const LOCALIZATION_ID_INVALID = -1;
+
+	//ENABLE THE STATES HERE
+	const ENABLE_WASHINGTON = true;
+	const ENABLE_CANADA = true;
+	const ENABLE_CALIFORNIA = true;
+	const ENABLE_GEORGIA = true;
 
 	public $address;
 	public $type;
@@ -60,6 +70,9 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	}
 
 	/**
+	*
+	* !!!!!! ENTRY METHOD !!!!!!
+	* 
 	* Return the tax calculator associated to this address
 	*
 	* @return TaxCalculator
@@ -82,18 +95,19 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		if (!empty($this->address->postcode))
 			$postcode = $this->address->postcode;
 
-
-		$customCalculator = $this->getOverrideCalculator($this->address);
+		//use this to track the session
+		$logId=round(microtime(true) * 1000);
+		$customCalculator = $this->getOverrideCalculator($logId, $this->address);
 
 		//check to see if there are any overrides
 		if(!is_null($customCalculator)){
-			PrestaShopLogger::addLog("Tax Override: custom calculator", 1);
+			PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > custom calculator", 1);
 			return $customCalculator;
 		}
 		else{
-			PrestaShopLogger::addLog("Tax Override: default calculator", 1);
+			PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > default calculator", 1);
 			//use default tax calculator
-			return $this->getDefaultTaxCalculator($postcode, $taxes);
+			return $this->getDefaultTaxCalculator();
 		}
 	}
 
@@ -102,7 +116,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	 * must calculate these taxes automatically
 	 *------------------------------------------------------*/
 
-	private function getOverrideCalculator($address){
+	private function getOverrideCalculator($logId, $address){
 
 		$tOverride = null;
 		$tOverrideRequest = new TaxRateOverrideRequest();
@@ -114,7 +128,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 			$state = State::getNameById($address->id_state);
 			$tOverrideRequest->setState($state);
 		} catch (Exception $e) {
-		    PrestaShopLogger::addLog("Tax Override: exception = ".$e->getMessage(), 2);
+		    PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > exception = ".$e->getMessage(), 1);
 		} 
 
 		$country_id = self::LOCALIZATION_ID_INVALID;
@@ -123,9 +137,9 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		}
 
 		if($country_id != self::LOCALIZATION_ID_INVALID){
-			if($country_id==self::LOCALIZATION_ID_COUNTRY_CANADA){
+			if(self::ENABLE_CANADA && $country_id==self::LOCALIZATION_ID_COUNTRY_CANADA){
 				//use canada
-				$tOverride = new CanadaTaxOverrideService();
+				$tOverride = new CanadaTaxOverrideService($logId);
 			}
 			else if($country_id==self::LOCALIZATION_ID_COUNTRY_UNITED_STATES){
 				$state_id = self::LOCALIZATION_ID_INVALID;
@@ -134,15 +148,9 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 				}
 
 				if($state_id!=self::LOCALIZATION_ID_INVALID){
-					/*
-					if($state_id==self::LOCALIZATION_ID_STATE_CALIFORNIA){
-						//use california
-						$tOverride = new CaliforniaTaxOverrideService();
-					}
-					*/
-					if($state_id==self::LOCALIZATION_ID_STATE_WASHINGTON){
+					if(self::ENABLE_WASHINGTON && $state_id==self::LOCALIZATION_ID_STATE_WASHINGTON){
 						//use washington
-						$tOverride = new WashingtonTaxOverrideService();
+						$tOverride = new WashingtonTaxOverrideService($logId);
 						
 						//set zip
 						$tOverrideRequest->setZip($address->postcode);
@@ -157,7 +165,9 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 			}
 		}
 
-		if($tOverride != null){
+		//PrestaShopLogger::addLog("Tax Rules Tax Manager = ".$tOverride, 1);
+
+		if($tOverride != null && !isEmpty($tOverride)){
 			$tOverrideResponse = $tOverride->getTaxRate($tOverrideRequest);
 			if($tOverrideResponse!=null && $tOverrideResponse->isValid())
 			{
@@ -184,7 +194,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 					return $customTaxCalc;
 				}
 				else{
-					PrestaShopLogger::addLog("Tax Override: status not successful", 2);
+					PrestaShopLogger::addLog("TaxRulesTaxManager: ".$logId." > status not successful", 1);
 				}
 			}
 		}
@@ -196,9 +206,15 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	 * DEFAULT BEHAVIOR
 	 *------------------------------------------------------*/
 
-	private function getDefaultTaxCalculator($postcode=0, $taxes=array())
-	{
-		static $tax_enabled = null;
+    /**
+    * Return the tax calculator associated to this address
+    *
+    * @return TaxCalculator
+    */
+
+    public function getDefaultTaxCalculator()
+    {
+        static $tax_enabled = null;
 
         if (isset($this->tax_calculator)) {
             return $this->tax_calculator;
@@ -258,5 +274,5 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
         }
 
         return Cache::retrieve($cache_id);
-	}
+    }
 }
