@@ -23,12 +23,13 @@ require_once('util/CurlHelper.php');
 //----------------------------------------
 
 class WashingtonTaxOverrideService implements iTaxOverrideService{
-	const HOST="dor.wa.gov";
+	const HOST="http://dor.wa.gov";
 	const ENDPOINT="AddressRates.aspx";
 
-	const SUCCESS_RESULT="2";
-	const INVALID_RESULT="3";
-	const INVALID_REQUEST="4";
+	const ENDPOINT_SUCCESS_RESULT="0";
+	const ENDPOINT_SUCCESS_RESULT2="2";
+	const ENDPOINT_INVALID_RESULT="3";
+	const ENDPOINT_INVALID_REQUEST="4";
 
 	const CURL_STATUS_UNKNOWN_ERROR=-1;
 	const CURL_STATUS_SUCCESS=1;
@@ -200,13 +201,14 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			$code = $xml->attributes()->code;
 			if(!empty($code)){
 				switch($code){
-					case self::SUCCESS_RESULT:
+					case self::ENDPOINT_SUCCESS_RESULT:
+					case self::ENDPOINT_SUCCESS_RESULT2:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
 						break;
-					case self::INVALID_RESULT:
+					case self::ENDPOINT_INVALID_RESULT:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_NO_RESULTS);
 						break;
-					case self::INVALID_REQUEST:
+					case self::ENDPOINT_INVALID_REQUEST:
 						$tResponse->setStatus(TaxRateOverrideResponse::STATUS_INVALID_REQ);
 						break;
 					default:

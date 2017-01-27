@@ -19,7 +19,7 @@
 ini_set('allow_url_fopen','on');
 
 require_once('CustomTax.php');
-require_once('inc/ITaxOverrideService.php');
+require_once('inc/TaxOverrideService.php');
 require_once('inc/WashingtonTaxOverrideService.php');
 require_once('inc/CanadaTaxOverrideService.php');
 require_once('inc/CaliforniaTaxOverrideService.php');
@@ -27,6 +27,12 @@ require_once('inc/GeorgiaTaxOverrideService.php');
 
 class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInterface
 {
+
+	/**
+     * @var Core_Business_ConfigurationInterface
+     */
+    private $configurationManager;
+
 	// use admin > localization > countries
 	// by default UNITED STATES = 21, CANADA = 4
 	// for states CALIFORNIA= 5, WASHINGTON= 47
@@ -40,8 +46,8 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	//ENABLE THE STATES HERE
 	const ENABLE_WASHINGTON = true;
 	const ENABLE_CANADA = true;
-	const ENABLE_CALIFORNIA = true;
-	const ENABLE_GEORGIA = true;
+	const ENABLE_CALIFORNIA = false;
+	const ENABLE_GEORGIA = false;
 
 	public $address;
 	public $type;
@@ -52,8 +58,14 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	 * @param Address $address
 	 * @param mixed An additional parameter for the tax manager (ex: tax rules id for TaxRuleTaxManager)
 	 */
-	public function __construct(Address $address, $type)
+	public function __construct(Address $address, $type, Core_Business_ConfigurationInterface $configurationManager = null)
 	{
+		if ($configurationManager === null) {
+            $this->configurationManager = Adapter_ServiceLocator::get('Core_Business_ConfigurationInterface');
+        } else {
+            $this->configurationManager = $configurationManager;
+        }
+		
 		$this->address = $address;
 		$this->type = $type;
 		$this->taxOverrideService=null;
@@ -98,6 +110,9 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		//use this to track the session
 		$logId=round(microtime(true) * 1000);
 		$customCalculator = $this->getOverrideCalculator($logId, $this->address);
+
+		var_dump($customCalculator);
+		die;
 
 		//check to see if there are any overrides
 		if(!is_null($customCalculator)){
@@ -165,9 +180,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 			}
 		}
 
-		//PrestaShopLogger::addLog("Tax Rules Tax Manager = ".$tOverride, 1);
-
-		if($tOverride != null && !isEmpty($tOverride)){
+		if($tOverride != null){
 			$tOverrideResponse = $tOverride->getTaxRate($tOverrideRequest);
 			if($tOverrideResponse!=null && $tOverrideResponse->isValid())
 			{
