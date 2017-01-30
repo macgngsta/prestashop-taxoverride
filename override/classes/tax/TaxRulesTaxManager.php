@@ -46,8 +46,8 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 	//ENABLE THE STATES HERE
 	const ENABLE_WASHINGTON = true;
 	const ENABLE_CANADA = true;
-	const ENABLE_CALIFORNIA = false;
-	const ENABLE_GEORGIA = false;
+	const ENABLE_CALIFORNIA = true;
+	const ENABLE_GEORGIA = true;
 
 	public $address;
 	public $type;
@@ -160,10 +160,22 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 				}
 
 				if($state_id!=self::LOCALIZATION_ID_INVALID){
+					$hasStateOverride=false;
 					if(self::ENABLE_WASHINGTON && $state_id==self::LOCALIZATION_ID_STATE_WASHINGTON){
 						//use washington
 						$tOverride = new WashingtonTaxOverrideService($logId);
-						
+						$hasStateOverride=true;
+					}
+					else if (self::ENABLE_CALIFORNIA && $state_id==self::LOCALIZATION_ID_STATE_CALIFORNIA){
+						$tOverride = new CaliforniaTaxOverrideService($logId);
+						$hasStateOverride=true;
+					}
+					else if (self::ENABLE_GEORGIA && $state_id==self::LOCALIZATION_ID_STATE_GEORGIA){
+						$tOverride = new GeorgiaTaxOverrideService($logId);
+						$hasStateOverride=true;
+					}
+
+					if($hasStateOverride){
 						//set zip
 						$tOverrideRequest->setZip($address->postcode);
 
@@ -174,6 +186,7 @@ class TaxRulesTaxManager extends TaxRulesTaxManagerCore implements TaxManagerInt
 		        		$tOverrideRequest->setAddress($address->address1);
 					}
 				}
+
 			}
 		}
 
