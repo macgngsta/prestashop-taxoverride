@@ -23,8 +23,8 @@ require_once('util/CurlHelper.php');
 //----------------------------------------
 
 class WashingtonTaxOverrideService implements iTaxOverrideService{
-	const HOST="http://dor.wa.gov";
-	const ENDPOINT="AddressRates.aspx";
+	const HOST="http://webgis.dor.wa.gov";
+	const ENDPOINT="webapi/addressrates.aspx";
 
 	const ENDPOINT_SUCCESS_RESULT="0";
 	const ENDPOINT_SUCCESS_RESULT2="2";
@@ -170,7 +170,7 @@ class WashingtonTaxOverrideService implements iTaxOverrideService{
 			$params['city']=$tRequest->getCity();
 			$params['zip']=$tRequest->getZip();
 
-			PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > querying wa,usa tax = ".$tRequest->getCity()." ".$tRequest->getZip(), 1);
+			PrestaShopLogger::addLog("WashingtonTaxOverrideService: ".$this->logId." > querying wa,usa tax = ".$tRequest->getAddress()." ".$tRequest->getCity()." ".$tRequest->getZip(), 1);
 		}
 
 		return $params;
