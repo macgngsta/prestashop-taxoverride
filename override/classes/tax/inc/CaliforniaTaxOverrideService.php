@@ -17,7 +17,9 @@
 
 require_once('TaxOverrideService.php');
 require_once('model/CustomTaxObject.php');
-require_once('model/ca_wsdl_generated/autoload.php');
+
+//https://gis.cdtfa.ca.gov/public/maps/taxrates/
+require('model/ca_wsdl_generated/autoload.php');
 
 //----------------------------------------
 // CaliforniaTaxOverrideService Class
@@ -92,29 +94,35 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 		$caRequest->setState(self::STATE_CALIFORNIA);
 		$caRequest->setZipCode($tRequest->getZip());
 
-		PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > querying cali state = ".$tRequest->getZip(), 1);
+		$request = new \GetRate($caRequest);
 
-		//GetRateResponse
-		$response = $service->GetRate($request);
-		//CARateResponseCollection
-		$rr = $response->getGetRateResult();
-		//ArrayOfCARateResponse
-		$rList = $rr->getCARateResponses();
+		PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > querying cali state with wsdl= ".$tRequest->getZip(), 1);
 
 		$taxRate = -1;
 
-		//CARateResponses in a list
-		foreach($rList as $rate){
-			//ArrayOfRateInformation
-			$arrResp = $rate->getResponses();
-			$respList = $arrResp->getRateInformation();
-			//RateInformation
-			foreach($respList as $ri){
-				//float
-				$tr = $ri->getRate();
-				if(!is_null($tr) && $tr>=0){
-					$taxRate=$tr;
-					break;
+		if(!is_null($service)){
+			//GetRateResponse
+			$response = $service->GetRate($request);
+			if(!is_null($response)){
+				//CARateResponseCollection
+				$rr = $response->getGetRateResult();
+				//ArrayOfCARateResponse
+				$rList = $rr->getCARateResponses();
+
+				//CARateResponses in a list
+				foreach($rList as $rate){
+					//ArrayOfRateInformation
+					$arrResp = $rate->getResponses();
+					$respList = $arrResp->getRateInformation();
+					//RateInformation
+					foreach($respList as $ri){
+						//float
+						$tr = $ri->getRate();
+						if(!is_null($tr) && $tr>=0){
+							$taxRate=$tr;
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -126,7 +134,7 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 			$tResponse->setStateRate(0);
 			$tResponse->setLocalRate($taxRate);
 			$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
-			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > found cali,usa tax = ".$taxRate ,1);
+			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > found cali,usa tax ".$tRequest->getZip()." = ".$taxRate ,1);
 		}
 		else{
 			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > could not find cali,usa state = ".$tRequest->getZip(), 1);
