@@ -43,8 +43,8 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 	private function buildMap(){
 		$t1 = new CustomTaxObject(self::STATE_CALIFORNIA, self::STATE_CALIFORNIA_ISO);
 		$t1->setPst(0.00);
-		$t1->setGst(0.0925);
-		$t1->setAgg(0.0925);
+		$t1->setGst(0.095);
+		$t1->setAgg(0.095);
 
 		$t1c= strtolower($t1->getName());
 		$t1iso= strtolower($t1->getIsoCode());

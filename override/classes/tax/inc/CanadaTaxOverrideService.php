@@ -231,9 +231,9 @@ class CanadaTaxOverrideService implements iTaxOverrideService{
 					$tResponse->setLocalRate($cRate->getPst());
 
 					//set default values - overall 13%
-					$tResponse->setAggregateRate(0.13);
-					$tResponse->setStateRate(0.13);
-					$tResponse->setLocalRate(0.0);
+					//$tResponse->setAggregateRate(0.13);
+					//$tResponse->setStateRate(0.13);
+					//$tResponse->setLocalRate(0.0);
 
 					$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
 
