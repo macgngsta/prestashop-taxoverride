@@ -3,6 +3,7 @@
 *  2013
 *  v1.0 - initial implementation
 *  v1.0.1 - July 1, 2017 - New Tax Rate 
+*  v1.0.2 - April 1, 2019 - new tax mechanism, similar to WA
 *
 *  DISCLAIMER
 *
@@ -16,6 +17,7 @@
 
 require_once('TaxOverrideService.php');
 require_once('model/CustomTaxObject.php');
+require_once('model/ca_wsdl_generated/autoload.php');
 
 //----------------------------------------
 // CaliforniaTaxOverrideService Class
@@ -24,7 +26,8 @@ require_once('model/CustomTaxObject.php');
 class CaliforniaTaxOverrideService implements iTaxOverrideService {
 	
 	const STATE_CALIFORNIA="California";
-	const STATE_CALIFORNIA_ISO="CA";	
+	const STATE_CALIFORNIA_ISO="CA";
+	const ENABLE_WSDL=true;
 
 	private $rateMap;
 	private $logId;
@@ -32,7 +35,7 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 	//----------------------------------------
 
 	public function __construct($logId)
-	{
+	{		
 		$this->rateMap = array();
 		$this->buildMap();
 		$this->logId=$logId;
@@ -55,6 +58,87 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 	//----------------------------------------
 
 	public function getTaxRate($tRequest){
+
+		if(self::ENABLE_WSDL){
+			return $this->getTaxRateWithWsdl($tRequest);
+		}
+		else{
+			return $this->getTaxRateWithMap($tRequest);
+		}
+	}
+
+	//----------------------------------------
+
+	private function isTaxRequestValid($tRequest){
+		
+		//seperate out the vars
+		if(is_object($tRequest)){
+			$state = $tRequest->getState();
+			return true;
+		}
+
+		return false;
+	}
+
+	//----------------------------------------
+
+	private function getTaxRateWithWsdl($tRequest){
+		$tResponse = new TaxRateOverrideResponse();
+
+		$service = new \CATaxRateAPI();
+		$caRequest = new \CARateRequest();
+		$caRequest->setStreetAddress($tRequest->getAddress());
+		$caRequest->setCity($tRequest->getCity());
+		$caRequest->setState(self::STATE_CALIFORNIA);
+		$caRequest->setZipCode($tRequest->getZip());
+
+		PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > querying cali state = ".$tRequest->getZip(), 1);
+
+		//GetRateResponse
+		$response = $service->GetRate($request);
+		//CARateResponseCollection
+		$rr = $response->getGetRateResult();
+		//ArrayOfCARateResponse
+		$rList = $rr->getCARateResponses();
+
+		$taxRate = -1;
+
+		//CARateResponses in a list
+		foreach($rList as $rate){
+			//ArrayOfRateInformation
+			$arrResp = $rate->getResponses();
+			$respList = $arrResp->getRateInformation();
+			//RateInformation
+			foreach($respList as $ri){
+				//float
+				$tr = $ri->getRate();
+				if(!is_null($tr) && $tr>=0){
+					$taxRate=$tr;
+					break;
+				}
+			}
+		}
+
+		if($taxRate>=0){
+			$tResponse->setLocationCode("CA_".$tRequest->getZip());
+			$tResponse->setAggregateRate($taxRate);
+			$tResponse->setLocationName("CA_".$tRequest->getZip());
+			$tResponse->setStateRate(0);
+			$tResponse->setLocalRate($taxRate);
+			$tResponse->setStatus(TaxRateOverrideResponse::STATUS_SUCCESS);
+			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > found cali,usa tax = ".$taxRate ,1);
+		}
+		else{
+			PrestaShopLogger::addLog("CaliforniaTaxOverrideService: ".$this->logId." > could not find cali,usa state = ".$tRequest->getZip(), 1);
+		}
+
+
+		return $tResponse;
+	}
+
+	//----------------------------------------
+
+	public function getTaxRateWithMap($tRequest){
 
 		$tResponse = new TaxRateOverrideResponse();
 		
@@ -91,19 +175,6 @@ class CaliforniaTaxOverrideService implements iTaxOverrideService {
 		}
 		
 		return $tResponse;
-	}
-
-	//----------------------------------------
-
-	private function isTaxRequestValid($tRequest){
-		
-		//seperate out the vars
-		if(is_object($tRequest)){
-			$state = $tRequest->getState();
-			return true;
-		}
-
-		return false;
 	}
 
 	//----------------------------------------
